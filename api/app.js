@@ -21,10 +21,10 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.use((req,res,next) =>{
+/* app.use((req,res,next) =>{
   console.log("Mildware içerisinde metin yazdım.");
   next();
-})
+}) */
 
 app.use('/api', require('./routes/index'));
 
