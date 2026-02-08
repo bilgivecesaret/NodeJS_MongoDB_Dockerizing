@@ -6,6 +6,7 @@ const Responce = require('../lib/Responce');
 const CustomError = require('../lib/Error');
 const Enums = require('../config/Enum');
 const AuditLogs = require('../lib/AuditLogs');
+const logger = require('../lib/logger/LoggerClass');
 
 /* GET users listing. */
 router.get('/', async (req, res) => {
@@ -32,9 +33,11 @@ router.post('/add', async (req, res) => {
         await newCategory.save();
 
         AuditLogs.info(req.user?.email, "Categories", "Add", newCategory);
+        logger.info(req.user?.email, "Categories", "Add", newCategory);
 
         res.json(Responce.successResponce(newCategory));
     } catch (error) {
+        logger.error(req.user?.email, "Categories", "Add", error);
         let errorResponce = Responce.errorResponce(error);
         res.status(errorResponce.code).json(errorResponce);   
     }
