@@ -1,4 +1,3 @@
-const { default: mongoose } = require('mongoose');
 const Enum = require('../config/Enum');
 const AuditlogsModel = require('../db/models/AuditLogs');
 
