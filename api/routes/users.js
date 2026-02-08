@@ -2,6 +2,7 @@ var express = require('express');
 
 const bcrypt = require('bcrypt-nodejs');
 const is = require('is_js');
+const jwt = require('jwt-simple');
 
 const Users = require('../db/models/Users');
 const Roles = require('../db/models/Roles');
@@ -9,6 +10,8 @@ const UserRoles = require('../db/models/UserRoles');
 const Responce = require('../lib/Responce');
 const CustomError = require('../lib/Error');
 const Enum = require('../config/Enum');
+const config = require('../config');
+
 var router = express.Router();
 
 /* GET users listing. */
@@ -179,6 +182,41 @@ router.post('/register', async (req, res) => {
       let errorResponce = Responce.errorResponce(error);
       res.status(errorResponce.code).json(errorResponce);
   }
+});
+
+router.post('/auth', async (req, res) => {
+  try {
+
+    let {email, password} = req.body;
+
+    Users.validateFieldsBeforeAuth(email, password);
+
+    let user = await Users.findOne({email});
+    
+    if(!user) throw new CustomError(Enum.HTTP_CODES.UNAUTHORIZED, "Authentication Error", "Email or Password are incorrect");
+
+    if(!user.validatePassword(password)) throw new CustomError(Enum.HTTP_CODES.UNAUTHORIZED, "Authentication Error", "Email or Password are incorrect");
+
+    let payload = {
+      id: user._id,
+      exp: parseInt(Date.now() / 1000) + config.JWT.EXPIRATION_TIME
+    };
+
+    let token = jwt.encode(payload, config.JWT.SECRET);
+
+    let userData = {
+      _id: user._id,
+      first_name: user.first_name,
+      last_name: user.last_name,
+    };
+
+    res.json(Responce.successResponce({token, user: userData}));
+
+  } catch (error) {
+    let errorResponce = Responce.errorResponce(error);
+    res.status(errorResponce.code).json(errorResponce);
+  }
+
 });
 
 module.exports = router;
