@@ -7,7 +7,11 @@ const Responce = require('../lib/Responce');
 const CustomError = require('../lib/Error');
 const Enum = require('../config/Enum');
 const role_privileges = require('../config/role_privileges');
+const auth = require('../lib/auth')();
 
+router.all('*',auth.authenticate(), (req, res, next) => {
+  next();
+});
 
 router.get('/', async (req, res) => {
   try {
