@@ -14,7 +14,7 @@ router.all('*',auth.authenticate(), (req, res, next) => {
 });
 
 /* GET users listing. */
-router.get('/', async (req, res) => {
+router.get('/', auth.checkRoles('category_view'), async (req, res) => {
     try {
         let categories = await Categories.find();
         res.json(Responce.successResponce(categories));
@@ -25,7 +25,7 @@ router.get('/', async (req, res) => {
 });
 
 /* POST create category */
-router.post('/add', async (req, res) => {
+router.post('/add', auth.checkRoles('category_add'), async (req, res) => {
     let body = req.body;
     try {
         if(!body.name) throw new CustomError(Enums.HTTP_CODES.BAD_REQUEST, "Validation Error!", "Name is required");
@@ -50,7 +50,7 @@ router.post('/add', async (req, res) => {
 
 
 /* UPDATE category */
-router.post('/update/', async (req, res) => {
+router.post('/update/', auth.checkRoles('category_update'), async (req, res) => {
 
     let body = req.body;
 
@@ -76,7 +76,7 @@ router.post('/update/', async (req, res) => {
 
 
 /* DELETE category */
-router.post('/delete/', async (req, res) => {
+router.post('/delete/', auth.checkRoles('category_delete'), async (req, res) => {
 
     let body = req.body;
 

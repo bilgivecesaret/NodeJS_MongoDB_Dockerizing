@@ -5,7 +5,10 @@ const config = require('../config');
 const User = require('../db/models/Users');
 const UserRoles = require('../db/models/UserRoles');
 const RolePrivileges = require('../db/models/RolePrivileges');
-
+const privs = require('../config/role_privileges');
+const Response = require('./Responce');
+const { HTTP_CODES } = require('../config/Enum');
+const CustomError = require('../lib/Error');
 
 module.exports = function () {
     let strategy = new Strategy({
@@ -19,10 +22,17 @@ module.exports = function () {
                 let userRoles = await UserRoles.find({user_id: payload.id});
 
                 let rolePrivileges = await RolePrivileges.find({role_id: {$in: userRoles.map(ur => ur.role_id)}});
+                
+                const allPrivileges = privs.priviliges.map(p => p.key);
+
+                let privileges = rolePrivileges.map(rp => privs.priviliges.find(p => p.key == rp.permission)).filter(Boolean);
+
+                const isSuperAdmin = privileges.length === allPrivileges.length;
 
                 done(null, {
                     id: user._id,
-                    roles: rolePrivileges,
+                    roles: privileges,
+                    is_super_admin: isSuperAdmin,
                     email: user.email,
                     first_name: user.first_name,
                     last_name: user.last_name,
@@ -45,6 +55,25 @@ module.exports = function () {
         },
         authenticate: function () {
             return passport.authenticate('jwt', {session: false});
+        },
+        checkRoles : (...expectedRoles) => {
+            return (req, res, next) => {
+
+                if (req.user.is_super_admin) {
+                    return next();
+                }
+
+                let privileges = req.user.roles.map(r => r.key);
+
+                let hasPermission = expectedRoles.some(r => privileges.includes(r));
+
+                if (!hasPermission) {
+                    let response = Response.errorResponce(new CustomError(HTTP_CODES.UNAUTHORIZED, "Unauthorized","Need permissions"));
+                    return res.status(response.code).json(response);
+                }
+
+                return next();
+            }
         }
     };
 };
