@@ -42,7 +42,7 @@ router.post('/', auth.checkRoles('auditlogs_view'), async (req, res) => {
       res.json(Reponse.successResponce(auditLogs));
 
   } catch (err) {
-    let errorResponce = Reponse.errorResponce(err);
+    let errorResponce = Reponse.errorResponce(err, req.user?.language);
     res.status(errorResponce.code).json(errorResponce);
   }
 });

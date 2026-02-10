@@ -8,6 +8,8 @@ const Enums = require('../config/Enum');
 const AuditLogs = require('../lib/AuditLogs');
 const logger = require('../lib/logger/LoggerClass');
 const auth = require('../lib/auth')();
+const config = require('../config');
+const i18n = new( require('../lib/i18n'))(config.DEFAULT_LANG);
 
 router.all('*',auth.authenticate(), (req, res, next) => {
   next();
@@ -28,7 +30,7 @@ router.get('/', auth.checkRoles('category_view'), async (req, res) => {
 router.post('/add', auth.checkRoles('category_add'), async (req, res) => {
     let body = req.body;
     try {
-        if(!body.name) throw new CustomError(Enums.HTTP_CODES.BAD_REQUEST, "Validation Error!", "Name is required");
+        if(!body.name) throw new CustomError(Enums.HTTP_CODES.BAD_REQUEST, i18n.translate("COMMON.VALIDATION_ERROR", req.user.language), i18n.translate("COMMON.FILED_MUST_BE_FILLED", req.user.language, ["name"]));
 
         let newCategory = new Categories({
             name: body.name,
@@ -43,7 +45,7 @@ router.post('/add', auth.checkRoles('category_add'), async (req, res) => {
         res.json(Responce.successResponce(newCategory));
     } catch (error) {
         logger.error(req.user?.email, "Categories", "Add", error);
-        let errorResponce = Responce.errorResponce(error);
+        let errorResponce = Responce.errorResponce(error, req.user.language);
         res.status(errorResponce.code).json(errorResponce);   
     }
 });
@@ -56,7 +58,7 @@ router.post('/update/', auth.checkRoles('category_update'), async (req, res) => 
 
     try {
 
-        if (!body._id) throw new CustomError(Enums.HTTP_CODES.BAD_REQUEST, "Validation Error!", "Category ID is required");
+        if (!body._id) throw new CustomError(Enums.HTTP_CODES.BAD_REQUEST, i18n.translate("COMMON.VALIDATION_ERROR", req.user.language), i18n.translate("COMMON.FILED_MUST_BE_FILLED", req.user.language, ["_id"]));
    
         let updates = {};
 
@@ -67,9 +69,9 @@ router.post('/update/', auth.checkRoles('category_update'), async (req, res) => 
 
         AuditLogs.info(req.user?.email, "Categories", "Update", {_id: body._id, ...updates});
 
-        res.json(Responce.successResponce("Category updated successfully!"));
+        res.json(Responce.successResponce({success: true}));
     } catch (error) {
-        let errorResponce = Responce.errorResponce(error);
+        let errorResponce = Responce.errorResponce(error, req.user.language);
         res.status(errorResponce.code).json(errorResponce);   
     }
 });
@@ -81,14 +83,14 @@ router.post('/delete/', auth.checkRoles('category_delete'), async (req, res) => 
     let body = req.body;
 
     try {
-        if (!body._id) throw new CustomError(Enums.HTTP_CODES.BAD_REQUEST, "Validation Error!", "Category ID is required");
+        if (!body._id) throw new CustomError(Enums.HTTP_CODES.BAD_REQUEST, i18n.translate("COMMON.VALIDATION_ERROR", req.user.language), i18n.translate("COMMON.FILED_MUST_BE_FILLED", req.user.language, ["_id"]));
         await Categories.deleteOne({_id: body._id});
 
         AuditLogs.info(req.user?.email, "Categories", "Delete", {_id: body._id});
 
-        res.json(Responce.successResponce("Category deleted successfully!"));
+        res.json(Responce.successResponce({success: true}));
     } catch (error) {
-        let errorResponce = Responce.errorResponce(error);
+        let errorResponce = Responce.errorResponce(error, req.user.language);
         res.status(errorResponce.code).json(errorResponce);   
     }
 });

@@ -8,6 +8,8 @@ const CustomError = require('../lib/Error');
 const Enum = require('../config/Enum');
 const role_privileges = require('../config/role_privileges');
 const auth = require('../lib/auth')();
+const config = require('../config');
+const i18n = new( require('../lib/i18n'))(config.DEFAULT_LANG);
 
 router.all('*', auth.authenticate(), (req, res, next) => {
   next();
@@ -18,7 +20,7 @@ router.get('/', auth.checkRoles('role_view'), async (req, res) => {
     let roles = await Roles.find({});
     res.json(Responce.successResponce(roles));
   } catch (error) {
-    let errorResponce = Responce.errorResponce(error);
+    let errorResponce = Responce.errorResponce(error, req.user.language);
     res.status(errorResponce.code).json(errorResponce);
   }
 });
@@ -26,9 +28,9 @@ router.get('/', auth.checkRoles('role_view'), async (req, res) => {
 router.post('/add', auth.checkRoles('role_add'), async (req, res) => {
   let body = req.body;
    try {
-    if (!body.role_name) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "Validation Error!", "Role Name is required");
+    if (!body.role_name) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, i18n.translate("COMMON.VALIDATION_ERROR", req.user.language), i18n.translate("COMMON.FILED_MUST_BE_FILLED", req.user.language, ["role_name"]));
     if(!body.permissions || !Array.isArray(body.permissions) || body.permissions.length == 0) {
-      throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "Validation Error!", "Permissions must be a non-empty array");
+      throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, i18n.translate("COMMON.VALIDATION_ERROR", req.user.language), i18n.translate("COMMON.FILED_MUST_BE_FILLED", req.user.language, ["permissions", "Array"]));
     }
 
     let role = new Roles({
@@ -49,9 +51,9 @@ router.post('/add', auth.checkRoles('role_add'), async (req, res) => {
       await priv.save();
     }
 
-    res.json(Responce.successResponce("Role added successfully!"));
+    res.json(Responce.successResponce({success: true}));
   } catch (error) {
-    let errorResponce = Responce.errorResponce(error);
+    let errorResponce = Responce.errorResponce(error, req.user.language);
     res.status(errorResponce.code).json(errorResponce);
   }
 });
@@ -59,7 +61,7 @@ router.post('/add', auth.checkRoles('role_add'), async (req, res) => {
 router.post('/update', auth.checkRoles('role_update'), async (req, res) => {
   let body = req.body;
    try {
-    if (!body._id) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "Validation Error!", "_id is required");
+    if (!body._id) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, i18n.translate("COMMON.VALIDATION_ERROR", req.user.language), i18n.translate("COMMON.FILED_MUST_BE_FILLED", req.user.language, ["_id"]));
 
     let update = {};
 
@@ -91,10 +93,10 @@ router.post('/update', auth.checkRoles('role_update'), async (req, res) => {
 
     await Roles.updateOne({ _id: body._id }, update);
 
-    res.json(Responce.successResponce("Role updated successfully!"));
+    res.json(Responce.successResponce({success: true}));
 
   } catch (error) {
-    let errorResponce = Responce.errorResponce(error);
+    let errorResponce = Responce.errorResponce(error, req.user.language);
     res.status(errorResponce.code).json(errorResponce);
   }
 });
@@ -102,13 +104,13 @@ router.post('/update', auth.checkRoles('role_update'), async (req, res) => {
 router.post('/delete', auth.checkRoles('role_delete'), async (req, res) => {
   let body = req.body;
    try {
-    if (!body._id) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, "Validation Error!", "_id is required");
+    if (!body._id) throw new CustomError(Enum.HTTP_CODES.BAD_REQUEST, i18n.translate("COMMON.VALIDATION_ERROR", req.user.language), i18n.translate("COMMON.FILED_MUST_BE_FILLED", req.user.language, ["_id"]));
 
     await Roles.remove({ _id: body._id });
-    res.json(Responce.successResponce("Role deleted successfully!"));
+    res.json(Responce.successResponce({success: true}));
     
   } catch (error) {
-    let errorResponce = Responce.errorResponce(error);
+    let errorResponce = Responce.errorResponce(error, req.user.language);
     res.status(errorResponce.code).json(errorResponce);
   }
 });

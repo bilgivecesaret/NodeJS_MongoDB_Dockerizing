@@ -9,6 +9,7 @@ const privs = require('../config/role_privileges');
 const Response = require('./Responce');
 const { HTTP_CODES } = require('../config/Enum');
 const CustomError = require('../lib/Error');
+const i18n = new( require('../lib/i18n'))(config.DEFAULT_LANG);
 
 module.exports = function () {
     let strategy = new Strategy({
@@ -36,11 +37,12 @@ module.exports = function () {
                     email: user.email,
                     first_name: user.first_name,
                     last_name: user.last_name,
+                    language: user.language,
                     exp: parseInt(Date.now() / 1000) * config.JWT.EXPIRATION_TIME
                 });
 
             } else {
-                done(new Error("User not found"), null);
+                done(new CustomError(HTTP_CODES.NOT_FOUND, i18n.translate("COMMON.NOT_FOUND", this.language)), null);
             }
         } catch (err) {
             done(err, null);
