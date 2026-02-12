@@ -91,6 +91,12 @@ module.exports = {
             description :"Allows the user to delete categories from the system."
         },
         {
+            key : "categories_export",
+            name : "Categories Export",     
+            group: "CATEGORIES",
+            description :"Allows the user to export categories to Excel."
+        },
+        {
             key : "auditlogs_view", 
             name : "Audit Logs View",
             group: "AUDITLOGS",
