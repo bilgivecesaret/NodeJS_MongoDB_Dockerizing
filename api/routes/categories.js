@@ -11,6 +11,12 @@ const auth = require('../lib/auth')();
 const config = require('../config');
 const i18n = new( require('../lib/i18n'))(config.DEFAULT_LANG);
 const emitter = require('../lib/Emitter');
+const Export = require('../lib/Export');
+const multer = require('multer');
+const Import = new(require('../lib/Import'))();
+
+
+const upload = multer({storage: multer.memoryStorage()}).single('import_file');
 
 
 router.all('*',auth.authenticate(), (req, res, next) => {
@@ -102,5 +108,62 @@ router.post('/delete/', auth.checkRoles('category_delete'), async (req, res) => 
         res.status(errorResponce.code).json(errorResponce);   
     }
 });
+
+/* EXPORT categories */
+router.post('/export', auth.checkRoles('category_export'), async (req, res) => {
+    try {
+        let categories = await Categories.find();
+        let exportData = new Export();
+        let excelData = exportData.toExcel(
+            ["KATEGORİ ADI", "AKTİF", "OLUŞTURAN KULLANICI", "OLUŞTURULMA TARİHİ", "GÜNCELLENME TARİHİ"],
+            ["name", "is_active", "created_by", "created_at","updated_at"],
+            categories
+        );
+
+        const fileName = `categories_${Date.now()}.xlsx`;
+
+        res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+        res.setHeader(
+            "Content-Type",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        );
+
+        res.send(excelData);
+
+    } catch (error) {
+        let errorResponce = Responce.errorResponce(error, req.user.language);
+        res.status(errorResponce.code).json(errorResponce);   
+    }
+});
+
+/* IMPORT categories */
+router.post('/import', auth.checkRoles('category_add'), upload, async (req, res) => {
+    try {
+
+        let file = req.file;
+
+         const rows = Import.fromExcel(file.buffer);
+
+        for(let i = 1; i < rows.length; i++){ 
+            let [name, is_active, created_by, createdAt, updatedAt] = rows[i];
+           
+            await Categories.create({
+                name,
+                is_active,
+                created_by: created_by || req.user?.id,
+                created_at: Import.parseExcelDate(createdAt),
+                updated_at: Import.parseExcelDate(updatedAt)
+            });
+        }
+
+        res.status(Enums.HTTP_CODES.CREATED).json(Responce.successResponce(req.body, Enums.HTTP_CODES.CREATED));
+
+    } catch (error) {
+        let errorResponce = Responce.errorResponce(error, req.user.language);
+        res.status(errorResponce.code).json(errorResponce);   
+    }
+});
+
+
 
 module.exports = router;
